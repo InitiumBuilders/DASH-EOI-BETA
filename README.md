@@ -191,7 +191,7 @@ The first seven appeared in v1.1. Ten more landed in v1.2 — including the east
 
 **❾ Reduce levels are embarrassingly parallel.** v1.1 reduced sequentially across groups at each level. v1.2 awaits `asyncio.gather` across all groups — same per-call cost, half the wall time on multi-group levels.
 
-**❿ Sovereignty needs portability.** v1.1 had `/home/initium/...` hardcoded. v1.2 derives ROOT from `Path(__file__).parent`. Local-first must not mean *my-machine-only*.
+**❿ Sovereignty needs portability.** v1.1 had user-specific paths hardcoded. v1.2 derives ROOT from `Path(__file__).parent`. Local-first must not mean *my-machine-only*.
 
 **⓫ Token estimates lie at scale.** `len(text)/4` is fine to 200K tokens. By 1M it drifts 8-12%, by 4M it's catastrophic. v1.2 uses real tokenizers (tiktoken or HF) when configured, falls back gracefully otherwise.
 
