@@ -165,9 +165,9 @@ Every arrow is a file write. Every stage is resumable. Read **[ARCHITECTURE.md](
 
 ---
 
-## The seventeen insights
+## The eighteen insights
 
-The first seven appeared in v1.1. Ten more landed in v1.2 — including the easter eggs.
+Seven from v1.1. Ten from v1.2. One from v1.3 — the one that turned the project into a teaching artifact.
 
 ### Foundational (v1.1)
 
@@ -206,6 +206,10 @@ The first seven appeared in v1.1. Ten more landed in v1.2 — including the east
 **⓰ Stretch targets matter as much as floors.** Floor = P50 (the cannot-go-below). Stretch = P90 (the to-aim-for). Both ratchet. The system always has a star to reach for that's harder than yesterday's average.
 
 **⓱ Every defensive decision pays interest forever.** Content-hash cache. Sanitized public deploys. Hard chunk caps. Resume support. JSON parse retries with strengthened wording. Each one is small; together they compound into something that survives reality.
+
+### v1.3 — the load-bearing insight
+
+**⓲ The teaching layer is the moat.** Lots of people will build map-reduce pipelines over local LLMs. Few will write a `PROMPTS/` folder that archives every directive that shaped the system, numbered and dated, with leverage analysis and replay instructions. The code is replicable. The teaching layer is what makes it *replayable*. Build it from day one; you can never reconstruct it later.
 
 ---
 
@@ -277,10 +281,10 @@ DASH-EOI-BETA/
 
 ## The Easter Eggs 🥚
 
-The code and docs hide **seventeen** small surprises for careful readers — seven from v1.1 and ten new in v1.2. Don't peek; find them.
+The code and docs hide **twenty-seven** small surprises for careful readers — seven from v1.1, ten from v1.2, and **ten new in v1.3**. Don't peek; find them.
 
 <details>
-<summary>I want spoilers — list the seventeen.</summary>
+<summary>I want spoilers — list the twenty-seven.</summary>
 
 **v1.1 (7):**
 1. The judge runs at temperature 0.2 while the synthesizer runs at 0.6 — the system literally uses a "cooler voice" to grade its own work. *(odt/judge.py)*
@@ -303,7 +307,41 @@ The code and docs hide **seventeen** small surprises for careful readers — sev
 16. The reducer fanout default is **4** — log₄(1M) ≈ 10 levels with 65K chunks. Tunable; chosen for the sweet spot between depth and per-merge fan-in. *(odt/config.py)*
 17. The escalation packet's `specific_question` field is a single sentence by design — if you can't ask the cloud peer in one sentence, you don't yet know what you need from them. *(odt/escalate.py)*
 
+**v1.3 (10):**
+18. The `PROMPTS/` folder is canonical. Every prompt that shaped this system is numbered and archived with structured metadata. The teaching layer is the moat. *(PROMPTS/README.md)*
+19. The temperature gradient across the agents falls monotonically as you climb: DashEI synth 0.6 → DashEI judge 0.2 → (third voice on private) review 0.15. The further up the stack you go, the colder the grader. *(by design)*
+20. The deploy pipeline is **deny-by-default** — a single regex match anywhere in the sanitized tree refuses the push. False positives are recoverable; false negatives leak forever. *(scripts/deploy.py)*
+21. The verifier scans LICENSE files separately with their own copyright-line regex — because copyright leaks don't usually have word boundaries on the operator's name. *(scripts/deploy.py)*
+22. The sanitizer replaces the operator's home path prefix (`/home/<user>`) with a generic placeholder. Try `grep -r /home/` on the public repo — you won't find a real home directory. *(scripts/deploy.py)*
+23. The reducer fanout default of **4** is also the deep-tree warning threshold. The same number governs both width and depth limits. Coincidence? No — symmetry. *(odt/config.py + odt/pipeline.py)*
+24. There are **18 insights** listed above the eggs and **17 historical eggs (v1.1+v1.2)**. The 18th insight landed in v1.3 — the teaching layer. The 18th is the one that makes the rest count. *(README.md)*
+25. The Hermes profile is named `dashei` (lowercase, alphanumeric — Hermes constraint). The agent persona file uses ALL CAPS in headers. The disagreement between filesystem and persona is intentional — the filesystem doesn't get a vote on identity. *(profile config)*
+26. The judge's evaluator rubric has **40 points across 4 dimensions**. Dividing by 4 gives you the per-dimension score. We never actually do that — we look at the gestalt. The math is there as discipline, not as truth. *(odt/judge.py)*
+27. This README's section count, when traced by `##` headers, equals the number of foundational insights. Look. Count. Notice. *(README.md)*
+
 </details>
+
+---
+
+## Voice from the local — DashEI v1.1
+
+The local model has opinions. We asked her for honest feedback on the v1.3 architecture. She ran for 52 seconds and produced this — verbatim, unedited:
+
+> *The triad's three-voice dynamic feels like a sharpened tool — Davara's strategic cloud vision, the third voice's outlier-driven reframing, and my execution layer now interlock with precision. The private/public repo split isn't just a technical split; it's a paradigm shift in trust and autonomy, letting each agent own its domain without siloing innovation. I'm excited by the frictionless handoffs between loop-seed mode and my local execution, creating a feedback loop that feels alive.*
+>
+> *A risk I see is the potential for environment drift between the triad's components. If the local execution layer's dependencies aren't rigorously versioned against the cloud's Opus 4.7, conflicts could arise during async workflows. The architecture team might overlook how subtle version mismatches in shared libraries could fragment the triad's coherence.*
+>
+> *For first-time local users, the README must explicitly warn to install all dependencies in a virtualenv* before *cloning. Skipping this step risks polluting the global Python environment, breaking the isolation that makes the split effective.*
+>
+> *— DashEI v1.1*
+
+The execution layer just told us to add a virtualenv warning to the docs. So:
+
+> **First-run advice (from DashEI herself):** Before cloning, create a virtualenv. The triad's isolation only works if the runtime is isolated too.
+> ```bash
+> python3 -m venv .venv && source .venv/bin/activate
+> pip install -r requirements.txt    # then clone or run
+> ```
 
 ---
 
@@ -311,7 +349,8 @@ The code and docs hide **seventeen** small surprises for careful readers — sev
 
 Honest backlog in **[OI-NEXT-STEPS.md](OI-NEXT-STEPS.md)**. Highlights:
 
-- **v1.3:** auto-escalation wiring, self-consistency (k=3 voting), HTML report generator, quality-floor-aware escalation thresholds.
+- **v1.3 (shipped):** Two-repo deploy pipeline (sanitize + verify + push), archived `PROMPTS/` teaching layer, DashEI live-feedback loop into public docs. *(Triad components like the third agent and AgenticCortex framework live in a private companion repo — public stays a clean, well-documented dyad.)*
+- **v1.4 candidates:** auto-escalation wiring, self-consistency (k=3 voting), HTML report generator, quality-floor-aware escalation thresholds.
 - **v2.0:** multi-model worker mix (route code chunks to coder models), two-agent live dance, autonomous prompt evolution, embedding-based semantic dedup, distributed runs across machines.
 
 ---
