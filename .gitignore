@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+
+# ODT runtime
+runs/
+lessons/*.md
+lessons/_quality.jsonl
+lessons/_quality_floor.json
+lessons/_evolution.jsonl
+odt/config.local.toml
+odt/prompts/_retired/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Build
+build/
+dist/
+*.zip
