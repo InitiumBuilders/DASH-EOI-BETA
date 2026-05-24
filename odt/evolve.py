@@ -3,7 +3,7 @@
 Lessons propose prompt mutations. This module tests them.
 
 Strategy:
-  1. Boss (or DashEI) writes worker_v2.md (or any _vN+1 variant).
+  1. the operator (or DashEI) writes worker_v2.md (or any _vN+1 variant).
   2. evolve.compare(run_id, prompt_name) replays the same input through both
      versions and scores them via the LLM judge.
   3. The winner gets a "PROMOTED" marker and v(N+1) becomes the active prompt.

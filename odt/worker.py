@@ -236,7 +236,7 @@ async def call_stream(
     """Yield token chunks from Ollama as they arrive.
 
     Caller is responsible for assembling the full text. Use this when
-    Boss wants to see synthesis arrive live rather than wait for the
+    the operator wants to see synthesis arrive live rather than wait for the
     complete response.
     """
     payload = {

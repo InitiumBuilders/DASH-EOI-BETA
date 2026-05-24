@@ -48,7 +48,7 @@ These are the load-bearing assumptions. If we change one, the architecture chang
 │   ↓                                                              │
 │ ESCALATE?   if quality_score < threshold → hand to Davara        │
 │   ↓                                                              │
-│ DELIVER     to Boss. Receipts attached.                          │
+│ DELIVER     to the operator. Receipts attached.                          │
 │   ↓                                                              │
 │ REFLECT     write lesson file; mutate prompts; bump version      │
 └──────────────────────────────────────────────────────────────────┘
@@ -174,7 +174,7 @@ Same as her existing Batching Protocol. Run them in order, re-run all five if an
 
 | Lens | Question |
 |---|---|
-| **Clarity** | Could a tired Boss read this in 30 seconds and understand the takeaway? |
+| **Clarity** | Could a tired the operator read this in 30 seconds and understand the takeaway? |
 | **Slop** | Any filler, default-LLM phrasing, decorative bullets? |
 | **Receipts** | Does every claim have a file path, line number, or test? |
 | **Restraint** | What can I delete without losing meaning? |
@@ -226,7 +226,7 @@ Every run, win or fail, ends with a written reflection saved to `lessons/<date>_
 - DashEI calls: <count>
 - Davara calls: <count>
 - Escalation triggered: <yes/no, why>
-- Quality (1-5, Boss-rated when provided): <n>
+- Quality (1-5, the operator-rated when provided): <n>
 
 ### What worked
 ...
@@ -244,7 +244,7 @@ Every run, win or fail, ends with a written reflection saved to `lessons/<date>_
 
 **Reflection is not optional.** The reflection writer runs at the end of every pipeline. Empty lessons are caught and trigger a stricter prompt next time.
 
-**Prompt evolution:** Worker/reducer/synthesizer prompts are versioned files in `odt/prompts/`. Each lesson can propose a v(n+1). Mutations only land after a side-by-side test against the same input shows improvement on at least one of: shorter runtime, higher Boss rating, fewer escalations.
+**Prompt evolution:** Worker/reducer/synthesizer prompts are versioned files in `odt/prompts/`. Each lesson can propose a v(n+1). Mutations only land after a side-by-side test against the same input shows improvement on at least one of: shorter runtime, higher the operator rating, fewer escalations.
 
 ---
 
@@ -286,7 +286,7 @@ The dance is **explicit and traced**. Every cross-agent message is logged in the
 ├── README.md                       ← quick-start
 ├── OI-NEXT-STEPS.md                ← evolution roadmap
 ├── PROMPTS/
-│   └── CORE_REQUEST_2026-05-24.md  ← Boss's founding prompt
+│   └── CORE_REQUEST_2026-05-24.md  ← the operator's founding prompt
 ├── odt/
 │   ├── pipeline.py                 ← the orchestrator (CLI entry)
 │   ├── worker.py                   ← LLM call wrapper, retries, JSON parse

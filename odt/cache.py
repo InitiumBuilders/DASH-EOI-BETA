@@ -2,7 +2,7 @@
 
 Why this matters at scale:
   - At 1M+ tokens of input, the same chunk text can appear across runs
-    (Boss iterates on prompts, swaps tasks, rerun similar inputs).
+    (the operator iterates on prompts, swaps tasks, rerun similar inputs).
   - Identical (prompt, model, num_ctx, temperature) → identical output.
   - Cache hits cost: 0 tokens, 0ms (after disk read).
   - Cache miss: same as before.

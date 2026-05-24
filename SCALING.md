@@ -47,7 +47,7 @@ Projected for various input sizes:
 
 ### v1.2 levers already in place:
 
-1. **Content-hash cache** — re-runs over similar corpora cost a fraction. Boss iterates on the *task*, not the input. Each iteration after the first runs at cache speed.
+1. **Content-hash cache** — re-runs over similar corpora cost a fraction. the operator iterates on the *task*, not the input. Each iteration after the first runs at cache speed.
 2. **Streaming reduce** — concurrent merges at each reduce level. Cuts the reduce wall-time roughly in half.
 3. **Collapse safety net** — never overflow context, no matter how deep the tree goes.
 4. **Resume support** — if Ollama OOMs at chunk 478, pick up at 479.

@@ -3,7 +3,7 @@
 This module produces the JSON packet only. The actual delivery to Davara
 happens via Hermes (e.g. piping the packet into a `hermes -z` call, or
 having the cloud agent read the file). The orchestrator never blocks
-waiting for Davara — escalation runs are produced and saved; Boss decides
+waiting for Davara — escalation runs are produced and saved; the operator decides
 when to involve Davara.
 """
 

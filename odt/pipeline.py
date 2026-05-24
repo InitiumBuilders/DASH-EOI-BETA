@@ -2,7 +2,7 @@
 
 v1.1 changes vs v1.0:
   + Single source of truth in odt.config (env-overridable)
-  + Streaming synthesis (Boss sees tokens live)
+  + Streaming synthesis (the operator sees tokens live)
   + Resume support (--resume <run-id> picks up at the last incomplete stage)
   + LLM-as-judge review (replaces regex-only checks)
   + Collapse safety net for reduce-level overflow

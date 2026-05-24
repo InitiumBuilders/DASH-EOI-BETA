@@ -72,7 +72,7 @@ Today every chunk hits `qwen3:8b`. v2 routes by type — code chunks → `qwen2.
 Davara writes the plan. Watches the root digest emit. Can interrupt the synthesizer with a redirect mid-pass. *Real cooperation, not handoff.* This is the moment DASH-EOI becomes a swarm, not a pipeline.
 
 ### 2.3  Self-modifying prompts (autonomous loop)
-Lessons → A/B runner → winners land into a `_evolution/` branch → a weekly diff surfaces for Boss approval. The system mutates its own DNA; Boss is the regulator.
+Lessons → A/B runner → winners land into a `_evolution/` branch → a weekly diff surfaces for the operator approval. The system mutates its own DNA; the operator is the regulator.
 
 ### 2.4  Beyond Ollama
 Swap to vLLM or llama-cpp with continuous batching. Same pipeline, faster floor. Add token-level streaming and per-request priorities.
