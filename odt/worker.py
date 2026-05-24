@@ -24,7 +24,7 @@ from typing import AsyncIterator
 import aiohttp
 
 
-OLLAMA_HOST_DEFAULT = "http://172.24.160.1:11434"
+OLLAMA_HOST_DEFAULT = "http://localhost:11434"
 MODEL_DEFAULT = "qwen3:8b"
 NUM_CTX_DEFAULT = 16384   # plenty for one chunk + prompt + response
 TIMEOUT_DEFAULT = 120     # per-call seconds
@@ -157,9 +157,33 @@ async def call_json(
     prompt: str,
     *,
     max_attempts: int = 3,
+    use_cache: bool = True,
     **kwargs,
 ) -> CallResult:
-    """Call Ollama expecting a JSON object back. Retry with stricter wording on failure."""
+    """Call Ollama expecting a JSON object back. Retry with stricter wording on failure.
+
+    v1.2: content-addressable cache. Cache hits return instantly with no
+    network call. Cache key is sha256 of (prompt, model, num_ctx, temperature).
+    """
+    # Cache lookup
+    if use_cache:
+        try:
+            from . import cache as _cache
+            model = kwargs.get("model", MODEL_DEFAULT)
+            num_ctx = kwargs.get("num_ctx", NUM_CTX_DEFAULT)
+            temperature = kwargs.get("temperature", 0.4)
+            hit = _cache.get(prompt, model=model, num_ctx=num_ctx, temperature=temperature)
+            if hit and "value" in hit and isinstance(hit["value"], dict):
+                v = hit["value"]
+                if "parsed" in v and v.get("parsed"):
+                    return CallResult(
+                        ok=True, text=v.get("text", ""),
+                        parsed=v["parsed"], duration_s=0.0,
+                        attempts=0,  # 0 attempts = cache hit
+                    )
+        except Exception:
+            pass
+
     last_err: str | None = None
     for attempt in range(1, max_attempts + 1):
         result = await call_ollama(session, prompt, **kwargs)
@@ -171,9 +195,22 @@ async def call_json(
         if parsed is not None:
             result.parsed = parsed
             result.attempts = attempt
+            # Cache the successful result
+            if use_cache:
+                try:
+                    from . import cache as _cache
+                    model = kwargs.get("model", MODEL_DEFAULT)
+                    num_ctx = kwargs.get("num_ctx", NUM_CTX_DEFAULT)
+                    temperature = kwargs.get("temperature", 0.4)
+                    _cache.put(
+                        prompt,
+                        {"text": result.text, "parsed": parsed},
+                        model=model, num_ctx=num_ctx, temperature=temperature,
+                    )
+                except Exception:
+                    pass
             return result
         last_err = f"JSON parse failed on attempt {attempt}"
-        # Strengthen the wording for the retry
         prompt = (
             prompt
             + "\n\nIMPORTANT: Your previous response was not valid JSON. "

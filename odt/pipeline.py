@@ -42,11 +42,13 @@ if __package__ is None or __package__ == "":
     from odt import reflect as RF, escalate as E, collapse as CL
     from odt import judge as J, personas as PERS, config as CFG_MOD
     from odt import quality as Q
+    from odt import streaming_reduce as SR, cache as CACHE
 else:
     from . import chunker as C, worker as W, pool as P, reducer as R
     from . import reflect as RF, escalate as E, collapse as CL
     from . import judge as J, personas as PERS, config as CFG_MOD
     from . import quality as Q
+    from . import streaming_reduce as SR, cache as CACHE
 
 
 ROOT = CFG_MOD.ROOT
@@ -306,7 +308,18 @@ async def run_pipeline(
         overlap_tokens=cfg.overlap_tokens,
         hard_max_tokens=cfg.hard_max_tokens,
     )
+    if len(chunks) > cfg.max_chunks:
+        print(f"ERROR: {len(chunks)} chunks exceeds max_chunks cap ({cfg.max_chunks}). "
+              f"Raise ODT_MAX_CHUNKS or split input.", file=sys.stderr)
+        sys.exit(3)
     info(f"produced {len(chunks)} chunk(s) of type='{chunks[0].structural_type if chunks else 'n/a'}'")
+    # Predict reduce-tree depth to warn early
+    import math
+    if len(chunks) > 1:
+        depth = math.ceil(math.log(len(chunks), cfg.reduce_fanout))
+        info(f"predicted reduce-tree depth: {depth} (fanout={cfg.reduce_fanout})")
+        if depth >= cfg.deep_tree_warn_levels:
+            warn(f"deep tree ({depth} levels) — wall time will scale; consider --concurrency 3+")
     chunk_dir = run_dir / "03_chunk"
     chunk_dir.mkdir(exist_ok=True)
     for ch in chunks:
@@ -323,14 +336,23 @@ async def run_pipeline(
         leaf_summaries = await _stage_map(session, chunks, task_one_liner, worker_tmpl, map_dir, cfg)
         dashei_calls = len(chunks)
 
-        # ─── 05 reduce (with collapse) ───────────────────────────────────
+        # ─── 05 reduce (with collapse + streaming) ───────────────────────
         banner("05 reduce")
         reducer_tmpl = W.load_prompt_template("reducer_v1", PROMPTS_DIR)
         reduce_dir = run_dir / "05_reduce"
         reduce_dir.mkdir(exist_ok=True)
-        root, levels = await _stage_reduce_with_collapse(
-            session, leaf_summaries, task_one_liner, reducer_tmpl, reduce_dir, cfg,
-        )
+        if cfg.reduce_streaming:
+            def _sr_progress(stage, level, n):
+                info(f"reduce level {level}: {stage} ({n})")
+            root, levels = await SR.streaming_tree_reduce(
+                session, leaf_summaries, task_one_liner, reducer_tmpl,
+                host=cfg.ollama_host, model=cfg.model,
+                fanout=cfg.reduce_fanout, out_dir=reduce_dir, on_progress=_sr_progress,
+            )
+        else:
+            root, levels = await _stage_reduce_with_collapse(
+                session, leaf_summaries, task_one_liner, reducer_tmpl, reduce_dir, cfg,
+            )
         dashei_calls += sum(len(L) for L in levels[1:])
         info(f"reduced through {len(levels) - 1} merge level(s) → root.json")
 

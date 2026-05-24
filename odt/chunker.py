@@ -15,24 +15,31 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+from . import tokenize as _tok
 
-CHARS_PER_TOKEN = 4   # approximation; good enough for routing
+
+CHARS_PER_TOKEN = 4   # fallback only; real counter is _tok.count()
 TARGET_TOKENS = 6000
 OVERLAP_TOKENS = 400
-HARD_MAX_TOKENS = 9000  # don't let a chunk grow past this even if structure says so
+HARD_MAX_TOKENS = 9000
 
 
 @dataclass
 class Chunk:
     index: int
     text: str
-    structural_type: str   # "code" | "markdown" | "json" | "prose"
+    structural_type: str
     token_count: int
-    origin_offset: int     # char offset in original input
+    origin_offset: int
 
 
 def estimate_tokens(text: str) -> int:
-    return max(1, len(text) // CHARS_PER_TOKEN)
+    """Return accurate token count via the configured tokenizer.
+
+    Note: kept named estimate_tokens for backward compat; v1.2 now uses
+    a real tokenizer when one is configured, falling back to chars/4.
+    """
+    return _tok.count(text)
 
 
 def detect_type(text: str) -> str:

@@ -44,23 +44,32 @@ This repository is the experiment.
 
 ## Status
 
-**v1.1 BETA** — functional end-to-end. Judged 36/40 on its own architecture review. ⚡
+**v1.2 BETA** — judged 37/40 on its own optimization analysis. Holds outlier verdict across 4 consecutive runs. ⚡
 
-| Capability | v1.0 | v1.1 |
-|---|:-:|:-:|
-| Semantic chunking with overlap | ✓ | ✓ |
-| Parallel map (N=2 workers) | ✓ | ✓ |
-| Tree reduce | ✓ | ✓ |
-| **Collapse safety net** (overflow-tolerant reduce) | – | **✓** |
-| **Streaming synthesis** (tokens arrive live) | – | **✓** |
-| **LLM-as-judge review** (4-axis score) | – | **✓** |
-| **Persona panel** (critic, tester, refactorer, steel-manner, systems-mapper) | dormant | **active** |
-| **Resume mid-run** | – | **✓** |
-| **Quality floor (ratcheting)** | – | **✓** |
-| **A/B prompt evolution** | – | **✓** |
-| **Single config source of truth** | – | **✓** |
-| Auto-escalation wiring | – | tier-2 |
-| Multi-model worker mix | – | v2 |
+| Capability | v1.0 | v1.1 | v1.2 |
+|---|:-:|:-:|:-:|
+| Semantic chunking with overlap | ✓ | ✓ | ✓ |
+| Parallel map (N=2 workers) | ✓ | ✓ | ✓ |
+| Tree reduce | ✓ | ✓ | ✓ |
+| Collapse safety net (overflow-tolerant reduce) | – | ✓ | ✓ |
+| Streaming synthesis (tokens arrive live) | – | ✓ | ✓ |
+| LLM-as-judge review (4-axis score) | – | ✓ | ✓ |
+| Persona panel | dormant | ✓ | ✓ |
+| Resume mid-run | – | ✓ | ✓ |
+| Quality floor (ratcheting) | – | ✓ | ✓ |
+| A/B prompt evolution | – | ✓ | ✓ |
+| Single config source of truth | – | ✓ | ✓ |
+| **Portable across hosts (no hardcoded paths)** | – | – | **✓** |
+| **Content-hash cache (free re-runs)** | – | – | **✓** |
+| **Real tokenizer support (tiktoken / HF)** | – | – | **✓** |
+| **Concurrent reduce at each tree level** | – | – | **✓** |
+| **`odt status` dashboard command** | – | – | **✓** |
+| **Deep-tree depth warnings + chunk cap** | – | – | **✓** |
+| **1M-4M token capacity (with overnight budget)** | – | – | **✓** |
+| Auto-escalation wiring | – | – | v1.3 |
+| Multi-model worker mix | – | – | v2 |
+
+See **[SCALING.md](SCALING.md)** for the 3-4M context engineering walkthrough.
 
 ---
 
@@ -68,7 +77,7 @@ This repository is the experiment.
 
 ```bash
 # Clone
-git clone https://github.com/initiumbuilders/DASH-EOI-BETA.git
+git clone https://github.com/InitiumBuilders/DASH-EOI-BETA.git
 cd DASH-EOI-BETA
 
 # Prereqs (one-time): Ollama with qwen3:8b loaded somewhere reachable
@@ -76,14 +85,15 @@ ollama pull qwen3:8b
 ollama serve  # if not running
 
 # Configure (env wins over defaults wins over odt/config.local.toml)
-export ODT_OLLAMA_HOST="http://localhost:11434"   # or your remote ollama
+export ODT_OLLAMA_HOST="http://localhost:11434"   # or your remote Ollama
 export ODT_MODEL="qwen3:8b"
 
-# Install deps (stdlib + aiohttp)
+# Install deps (stdlib + aiohttp; optionally tiktoken or transformers)
 pip install aiohttp
+pip install tiktoken            # optional, for accurate tokens
 
 # Run it
-python -m odt.pipeline "Summarize the three most important ideas in this text: $(cat README.md)"
+python -m odt.pipeline "Summarize the three most important ideas in: $(cat README.md)"
 
 # From a file
 python -m odt.pipeline "@/path/to/large_document.md" --task "Extract the action items"
@@ -94,8 +104,33 @@ python -m odt.pipeline "..." --with critic,systems_mapper
 # Resume a crashed run
 python -m odt.pipeline --resume 2026-05-24_073704__your-task-slug
 
+# Check the dashboard
+python -m odt.status
+
 # Check quality trajectory
 python -m odt.quality
+```
+
+### v1.2 environment flags worth knowing
+
+```bash
+# Use a real tokenizer (recommended for 1M+ inputs)
+export ODT_TOKENIZER=tiktoken
+
+# Pre-cache speedup (default ON): identical chunks across runs return instantly
+export ODT_MAP_CACHE_ENABLED=1
+
+# Streaming reduce (default ON): concurrent merges per tree level
+export ODT_REDUCE_STREAMING=1
+
+# Raise the chunk safety cap for very large inputs
+export ODT_MAX_CHUNKS=2000
+
+# Point at a different Ollama (Docker, remote, etc.)
+export ODT_OLLAMA_HOST="http://10.0.1.42:11434"
+
+# Move the whole project root
+export ODT_ROOT="/srv/davara-oi"
 ```
 
 Every run produces:
@@ -194,27 +229,32 @@ No OpenAI keys. No Anthropic keys. No telemetry. No phone-home. The only network
 DASH-EOI-BETA/
 ├── README.md                   ← you are here
 ├── ARCHITECTURE.md             ← the doctrine
+├── SCALING.md                  ← the 1M-4M context engineering note
 ├── OI-NEXT-STEPS.md            ← the honest backlog
 ├── PROMPTS/
-│   └── CORE_REQUEST_*.md       ← Boss's founding prompts (canonical, never delete)
+│   └── CORE_REQUEST_*.md       ← Boss's founding prompts (canonical)
 ├── odt/
 │   ├── pipeline.py             ← orchestrator (CLI entry)
 │   ├── config.py               ← single source of truth (env-overridable)
 │   ├── chunker.py              ← semantic chunking
-│   ├── worker.py               ← Ollama call + JSON + streaming
+│   ├── tokenize.py             ← tokenizer abstraction (estimate / tiktoken / hf)
+│   ├── worker.py               ← Ollama call + JSON + streaming + cache
 │   ├── pool.py                 ← bounded async parallel pool
-│   ├── reducer.py              ← tree reduce
+│   ├── reducer.py              ← tree reduce primitives
+│   ├── streaming_reduce.py     ← concurrent reduce at each tree level
 │   ├── collapse.py             ← overflow safety net
+│   ├── cache.py                ← content-hash LLM call cache
 │   ├── judge.py                ← LLM-as-judge (4 axes)
 │   ├── personas.py             ← runtime persona invocation
 │   ├── reflect.py              ← lesson writer
 │   ├── escalate.py             ← Davara handoff packet
 │   ├── evolve.py               ← A/B prompt mutation runner
 │   ├── quality.py              ← ratcheting floor + trend
+│   ├── status.py               ← dashboard
 │   ├── prompts/                ← versioned (worker_v1, reducer_v1, ...)
 │   └── personas/               ← critic / tester / refactorer / steelmanner / systems_mapper
-├── runs/<id>/                  ← per-run state (00..09 stages)
-└── lessons/                    ← cross-run learning archive + quality log
+├── runs/<id>/                  ← per-run state (00..09 stages, gitignored)
+└── lessons/                    ← cross-run learning archive (gitignored)
 ```
 
 ---
